@@ -69,7 +69,7 @@ data class Book(
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    val updatedAt: Instant? = null
+    var updatedAt: Instant? = null
 
 ) {
     @PrePersist

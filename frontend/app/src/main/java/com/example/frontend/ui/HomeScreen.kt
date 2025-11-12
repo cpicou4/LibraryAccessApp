@@ -385,6 +385,188 @@ fun HomeScreen() {
                         }
                     }
                 }
+                //Temp location of all reservation functions for testing purposes.
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    SectionHeader(title = "Admin Temp: Reservation Tests", icon = Icons.Default.Settings)
+                }
+
+                item {
+                    var resUserId by remember { mutableStateOf(TokenStore.userId?.toString() ?: "") }
+                    var resBookId by remember { mutableStateOf("") }
+                    var resId by remember { mutableStateOf("") }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Inputs
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                OutlinedTextField(
+                                    value = resUserId,
+                                    onValueChange = { resUserId = it },
+                                    label = { Text("User ID") },
+                                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = resBookId,
+                                    onValueChange = { resBookId = it },
+                                    label = { Text("Book ID") },
+                                    leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = resId,
+                                    onValueChange = { resId = it },
+                                    label = { Text("Reservation ID") },
+                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                            }
+
+                            // Row 1: Create / Cancel
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val uid = resUserId.toInt()
+                                                val bid = resBookId.toInt()
+                                                val dto = ReservationCreateDto(userId = uid, bookId = bid)
+                                                val r = withContext(Dispatchers.IO) { ApiClient.api.createReservation(dto) }
+                                                output = "✓ Reservation Created\n\n#${r.id}  user=${r.userId}  book=${r.bookId}\n" +
+                                                        "queue=${r.queuePosition ?: "-"}  window=${r.reservationDate}..${r.expiryDate}\nstatus=${r.status}"
+                                            } catch (e: Exception) {
+                                                output = "Create reservation failed: ${e.message}"
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("Create") }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val id = resId.toInt()
+                                                val uid = resUserId.toIntOrNull() // optional
+                                                val r = withContext(Dispatchers.IO) { ApiClient.api.cancelReservation(id, uid) }
+                                                output = "✓ Reservation Cancelled\n\n#${r.id} status=${r.status}"
+                                            } catch (e: Exception) {
+                                                output = "Cancel failed: ${e.message}"
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("Cancel") }
+                            }
+
+                            // Row 2:  Get All / Get By ID
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val list = withContext(Dispatchers.IO) { ApiClient.api.getReservations() }
+                                                output = if (list.isEmpty()) "No reservations." else
+                                                    "All Reservations (${list.size}):\n\n" +
+                                                            list.joinToString("\n") { r ->
+                                                                "• #${r.id} U${r.userId} B${r.bookId} q=${r.queuePosition ?: "-"}\n  ${r.reservationDate}..${r.expiryDate}  ${r.status}"
+                                                            }
+                                            } catch (e: Exception) {
+                                                output = "Get all failed: ${e.message}"
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("Get All") }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val id = resId.toInt()
+                                                val r = withContext(Dispatchers.IO) { ApiClient.api.getReservationById(id) }
+                                                output = "#${r.id}  user=${r.userId} book=${r.bookId}\n" +
+                                                        "queue=${r.queuePosition ?: "-"}\n" +
+                                                        "window=${r.reservationDate}..${r.expiryDate}\nstatus=${r.status}"
+                                            } catch (e: Exception) {
+                                                output = "Get by id failed: ${e.message}"
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("Get By ID") }
+                            }
+
+                            // Row 3: Get Active by User / by Book
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val uid = resUserId.toInt()
+                                                val list = withContext(Dispatchers.IO) { ApiClient.api.getActiveReservationsByUser(uid) }
+                                                output = if (list.isEmpty()) "No active reservations for user $uid." else
+                                                    "Active by User $uid (${list.size}):\n\n" +
+                                                            list.joinToString("\n") { r ->
+                                                                "• #${r.id} B${r.bookId} q=${r.queuePosition ?: "-"} " +
+                                                                        "[${r.reservationDate}..${r.expiryDate}] ${r.status}"
+                                                            }
+                                            } catch (e: Exception) {
+                                                output = "Get active by user failed: ${e.message}"
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("Active by User") }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val bid = resBookId.toInt()
+                                                val list = withContext(Dispatchers.IO) { ApiClient.api.getActiveReservationsByBook(bid) }
+                                                output = if (list.isEmpty()) "No active reservations for book $bid." else
+                                                    "Active by Book $bid (${list.size}):\n\n" +
+                                                            list.joinToString("\n") { r ->
+                                                                "• #${r.id} U${r.userId} q=${r.queuePosition ?: "-"} " +
+                                                                        "[${r.reservationDate}..${r.expiryDate}] ${r.status}"
+                                                            }
+                                            } catch (e: Exception) {
+                                                output = "Get active by book failed: ${e.message}"
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("Active by Book") }
+                            }
+                        }
+                    }
+                }
+                // End of temp area
             }
 
             // Output Section

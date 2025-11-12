@@ -83,3 +83,19 @@ data class BorrowingRecordCreateDto(
 data class BorrowingRecordReturnDto(
     val returnDate: String? = null
 )
+
+//Reservation
+data class ReservationCreateDto(
+    val userId: Int,
+    val bookId: Int
+)
+
+data class ReservationGetDto(
+    val id: Int,
+    val userId: Int,
+    val bookId: Int,
+    val queuePosition: Int?,
+    val reservationDate: String,
+    val expiryDate: String,
+    val status: String
+)
