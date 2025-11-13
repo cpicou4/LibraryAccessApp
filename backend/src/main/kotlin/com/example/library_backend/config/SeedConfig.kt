@@ -26,11 +26,6 @@ class SeedConfig {
         bookService: BookService
     ) = ApplicationRunner {
 
-        if (bookRepo.count() > 0L) {
-            println("Seed: books already present, skipping.")
-            return@ApplicationRunner
-        }
-
         try {
             val resource = ClassPathResource("seed/books.csv")
             if (!resource.exists()) {
@@ -48,15 +43,31 @@ class SeedConfig {
 
                     val parser = csvFormat.parse(reader)
 
-                    var count = 0
+                    var created = 0
+                    var skippedExisting = 0
+                    var skippedInvalid = 0
+
                     for (record in parser) {
                         val title = record.get("title").trim()
                         if (title.isBlank()) {
                             println("Seed: skipping row with blank title: $record")
+                            skippedInvalid++
                             continue
                         }
 
-                        val isbn = record.get("isbn").trim().ifBlank { null }
+                        val rawIsbn = record.get("isbn").trim()
+                        if (rawIsbn.isBlank()) {
+                            println("Seed: skipping row with blank ISBN for title '$title'")
+                            skippedInvalid++
+                            continue
+                        }
+
+                        val existing = bookRepo.findByIsbn(rawIsbn)
+                        if (existing != null) {
+                            skippedExisting++
+                            continue
+                        }
+
                         val publisher = record.get("publisher").trim().ifBlank { null }
                         val yearStr = record.get("publicationYear").trim()
                         val totalStr = record.get("totalCopies").trim()
@@ -85,7 +96,7 @@ class SeedConfig {
                         }
 
                         val dto = BookCreateDto(
-                            isbn = isbn,
+                            isbn = rawIsbn,
                             title = title,
                             publisher = publisher,
                             publicationYear = publicationYear,
@@ -97,10 +108,13 @@ class SeedConfig {
                         )
 
                         bookService.create(dto)
-                        count++
+                        created++
                     }
 
-                    println("Seed: successfully seeded $count books from CSV.")
+                    println(
+                        "Seed: successfully processed CSV. " +
+                                "Created=$created, SkippedExisting=$skippedExisting, SkippedInvalid=$skippedInvalid."
+                    )
                 }
             }
         } catch (ex: Exception) {
