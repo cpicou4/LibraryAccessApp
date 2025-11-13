@@ -8,10 +8,10 @@ data class BookGetDto(
     val id: Int,
     val isbn: String?,
     val title: String,
-    val author: String,
+    val authors: List<String>,
     val publisher: String?,
     val publicationYear: Int?,
-    val category: String?,
+    val categories: List<String>,
     val totalCopies: Int,
     val availableCopies: Int,
     val description: String?,
@@ -28,16 +28,14 @@ data class BookCreateDto(
     val title: String,
 
     @field:NotBlank
-    @field:Size(max = 255)
-    val author: String,
+    val authors: List<String>,
 
     @field:Size(max = 100)
     val publisher: String?,
 
     val publicationYear: Int?,
 
-    @field:Size(max = 50)
-    val category: String?,
+    val categories: List<String>,
 
     @field:Min(0)
     val totalCopies: Int = 0,
@@ -61,16 +59,14 @@ data class BookUpdateDto(
     val title: String,
 
     @field:NotBlank
-    @field:Size(max = 255)
-    val author: String,
+    val authors: List<String>,
 
     @field:Size(max = 100)
     val publisher: String?,
 
     val publicationYear: Int?,
 
-    @field:Size(max = 50)
-    val category: String?,
+    val categories: List<String>,
 
     @field:Min(0)
     val totalCopies: Int,

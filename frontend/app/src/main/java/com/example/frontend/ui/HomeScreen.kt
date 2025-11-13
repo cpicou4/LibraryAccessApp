@@ -566,7 +566,87 @@ fun HomeScreen() {
                         }
                     }
                 }
-                // End of temp area
+                // End of temp area Reservation
+
+                // Temp: Authors & Categories tests
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    SectionHeader(
+                        title = "Admin Temp: Author & Category Tests",
+                        icon = Icons.Default.Settings
+                    )
+                }
+
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val authors = withContext(Dispatchers.IO) {
+                                                    ApiClient.api.getAuthors()
+                                                }
+                                                output = if (authors.isEmpty()) {
+                                                    "No authors found."
+                                                } else {
+                                                    "Authors (${authors.size}):\n\n" +
+                                                            authors.joinToString("\n") { a ->
+                                                                "• #${a.id}  ${a.name}"
+                                                            }
+                                                }
+                                            } catch (e: Exception) {
+                                                output = "Get authors failed: ${e.message}"
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Get All Authors")
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val categories = withContext(Dispatchers.IO) {
+                                                    ApiClient.api.getCategories()
+                                                }
+                                                output = if (categories.isEmpty()) {
+                                                    "No categories found."
+                                                } else {
+                                                    "Categories (${categories.size}):\n\n" +
+                                                            categories.joinToString("\n") { c ->
+                                                                "• #${c.id}  ${c.type}"
+                                                            }
+                                                }
+                                            } catch (e: Exception) {
+                                                output = "Get categories failed: ${e.message}"
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Get All Categories")
+                                }
+                            }
+                        }
+                    }
+                } // End of temp area Authors / Categories
             }
 
             // Output Section
@@ -652,30 +732,49 @@ fun BookCard(book: BookGetDto) {
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Spacer(Modifier.height(8.dp))
-            
-            // Author and Publisher
+
+            // Author(s) and Publisher
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                InfoChip(label = "Author", value = book.author ?: "Unknown")
+                val authorLabel = when {
+                    book.authors.isEmpty() -> "Unknown"
+                    book.authors.size == 1 -> book.authors.first()
+                    else -> book.authors.joinToString(", ")
+                }
+
+                InfoChip(label = "Author(s)", value = authorLabel)
+
                 InfoChip(label = "Publisher", value = book.publisher ?: "Unknown")
             }
-            
+
             Spacer(Modifier.height(8.dp))
-            
-            // Category, ISBN, Year
+
+            // Categories, ISBN, Year
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val categoryLabel = when {
+                    book.categories.isEmpty() -> "Uncategorized"
+                    else -> book.categories.joinToString(", ")
+                }
+
                 AssistChip(
                     onClick = { },
-                    label = { Text(book.category ?: "Uncategorized") },
-                    leadingIcon = { Icon(Icons.Default.Menu, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    label = { Text(categoryLabel) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Menu,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 )
+
                 book.isbn?.let { isbn ->
                     if (isbn.isNotBlank()) {
                         AssistChip(
@@ -685,10 +784,10 @@ fun BookCard(book: BookGetDto) {
                     }
                 }
             }
-            
+
             Spacer(Modifier.height(8.dp))
-            
-            // Availability
+
+            // Availability card
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = if (book.availableCopies > 0) {
@@ -720,13 +819,13 @@ fun BookCard(book: BookGetDto) {
                     )
                     Spacer(Modifier.weight(1f))
                     Text(
-                        text = "Year: ${book.publicationYear}",
+                        text = "Year: ${book.publicationYear ?: "-"}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
-            
-            // Description
+
+            //Description
             book.description?.let { desc ->
                 if (desc.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))

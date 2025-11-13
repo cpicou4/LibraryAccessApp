@@ -5,7 +5,27 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class BookService(private val repo: BookRepository) {
+class BookService(
+    private val repo: BookRepository,
+    private val authorRepo: AuthorRepository,
+    private val categoryRepo: CategoryRepository
+) {
+
+    private fun resolveAuthors(names: List<String>): MutableSet<Author> =
+        names.mapNotNull { raw ->
+            val name = raw.trim()
+            if (name.isBlank()) null
+            else authorRepo.findByNameIgnoreCase(name)
+                ?: authorRepo.save(Author(name = name))
+        }.toMutableSet()
+
+    private fun resolveCategories(types: List<String>): MutableSet<Category> =
+        types.mapNotNull { raw ->
+            val type = raw.trim()
+            if (type.isBlank()) null
+            else categoryRepo.findByTypeIgnoreCase(type)
+                ?: categoryRepo.save(Category(type = type))
+        }.toMutableSet()
 
     fun getAll(): List<BookGetDto> =
         repo.findAll().map { it.toGetDto() }
@@ -16,6 +36,8 @@ class BookService(private val repo: BookRepository) {
 
     @Transactional
     fun create(dto: BookCreateDto): BookGetDto {
+        val authors = resolveAuthors(dto.authors)
+        val categories = resolveCategories(dto.categories)
         // Guard becuase isbn has to be unique
         if (dto.isbn != null && repo.existsByIsbn(dto.isbn)) {
             throw IllegalArgumentException("ISBN '${dto.isbn}' already exists")
@@ -25,10 +47,10 @@ class BookService(private val repo: BookRepository) {
             Book(
                 isbn = dto.isbn,
                 title = dto.title,
-                author = dto.author,
+                authors = authors,
                 publisher = dto.publisher,
                 publicationYear = dto.publicationYear,
-                category = dto.category,
+                categories = categories,
                 totalCopies = dto.totalCopies,
                 availableCopies = dto.availableCopies,
                 description = dto.description,
@@ -43,15 +65,19 @@ class BookService(private val repo: BookRepository) {
         val entity = repo.findByIdOrNull(id)
             ?: throw NoSuchElementException("Book $id not found")
 
-        // Guard for unique isbn on update
-        if (dto.isbn != null) {
-            val conflict = repo.findByIsbn(dto.isbn)
+        dto.isbn?.let { newIsbn ->
+            val conflict = repo.findByIsbn(newIsbn)
             if (conflict != null && conflict.id != id) {
-                throw IllegalArgumentException("ISBN '${dto.isbn}' already exists")
+                throw IllegalArgumentException("ISBN '$newIsbn' already exists")
             }
         }
 
-        entity.updateFrom(dto)
+        // Only resolve if client actually sent lists
+        val resolvedAuthors = dto.authors?.let { resolveAuthors(it) }
+        val resolvedCats = dto.categories?.let { resolveCategories(it) }
+
+        entity.updateFrom(dto, resolvedAuthors, resolvedCats)
+
         return entity.toGetDto()
     }
 
