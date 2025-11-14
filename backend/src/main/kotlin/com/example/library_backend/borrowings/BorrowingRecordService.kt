@@ -1,6 +1,7 @@
 package com.example.library_backend.borrowings
 
 import com.example.library_backend.books.*
+import com.example.library_backend.reservations.ReservationService
 import com.example.library_backend.users.UserRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -19,7 +20,8 @@ data class FinePolicy(
 class BorrowingRecordService(
     private val repo: BorrowingRecordRepository,
     private val bookRepo: BookRepository,
-    private val userRepo: UserRepository
+    private val userRepo: UserRepository,
+    private val reservationService: ReservationService
 ) {
     private val policy = FinePolicy()
 
@@ -56,6 +58,8 @@ class BorrowingRecordService(
         )
 
         book.availableCopies = book.availableCopies - 1
+
+        reservationService.completeIfReserved(dto.userId,dto.bookId)
 
         val saved = repo.save(record)
         return saved.toGetDto(policy)

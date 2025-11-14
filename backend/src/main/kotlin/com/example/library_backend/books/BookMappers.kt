@@ -4,10 +4,10 @@ fun Book.toGetDto() = BookGetDto(
     id = id,
     isbn = isbn,
     title = title,
-    author = author,
+    authors = authors.map { it.name }.sorted(),
     publisher = publisher,
     publicationYear = publicationYear,
-    category = category,
+    categories = categories.map { it.type }.sorted(),
     totalCopies = totalCopies,
     availableCopies = availableCopies,
     description = description,
@@ -15,15 +15,30 @@ fun Book.toGetDto() = BookGetDto(
 
 )
 
-fun Book.updateFrom(dto: BookUpdateDto) {
-    isbn = dto.isbn
-    title = dto.title
-    author = dto.author
-    publisher = dto.publisher
-    publicationYear = dto.publicationYear
-    category = dto.category
-    totalCopies = dto.totalCopies
-    availableCopies = dto.availableCopies
-    description = dto.description
-    coverImageUrl = dto.coverImageUrl
+fun Book.updateFrom(
+    dto: BookUpdateDto,
+    resolvedAuthors: Set<Author>? = null,
+    resolvedCategories: Set<Category>? = null
+) {
+    dto.isbn?.let { this.isbn = it }
+    dto.title?.let { this.title = it }
+
+    // Replace authors only if caller provided a new set
+    resolvedAuthors?.let { newAuthors ->
+        this.authors.clear()
+        this.authors.addAll(newAuthors)
+    }
+    dto.publisher?.let { this.publisher = it }
+    dto.publicationYear?.let { this.publicationYear = it }
+
+    // Replace categories only if caller provided a new set
+    resolvedCategories?.let { newCats ->
+        this.categories.clear()
+        this.categories.addAll(newCats)
+    }
+    dto.totalCopies?.let { this.totalCopies = it }
+    dto.availableCopies?.let { this.availableCopies = it }
+    dto.description?.let { this.description = it }
+    dto.coverImageUrl?.let { this.coverImageUrl = it }
+
 }

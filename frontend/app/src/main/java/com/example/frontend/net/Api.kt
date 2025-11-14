@@ -7,6 +7,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
+import retrofit2.Response
 
 object TokenStore {
     var token: String? = null
@@ -30,15 +31,64 @@ interface ApiService {
     @POST("api/auth/register") suspend fun register(@Body dto: UserCreateDto): Any
     @POST("api/auth/login") suspend fun login(@Body dto: LoginRequestDto): LoginResponseDto
 
-    // Public
+    /* ----------------------------- Public ------------------------------------*/
+    //Authors
+    @GET("/api/authors") suspend fun getAuthors(): List<AuthorGetDto>
+
+    @GET("/api/authors/{id}") suspend fun getAuthorById(@Path("id") id: Int): AuthorGetDto
+
+    //Books
     @GET("api/books") suspend fun getBooks(): List<BookGetDto>
+    @GET("/api/books/{id}") suspend fun getBookById(@Path("id") id: Int): BookGetDto
+
+    //Borrowings Records
     @GET("api/borrowings/user/{userId}/active") suspend fun getActiveBorrowingsByUser(@Path("userId") userId: Int): List<BorrowingRecordGetDto>
     @POST("api/borrowings") suspend fun checkOut(@Body dto: BorrowingRecordCreateDto): BorrowingRecordGetDto
     @PUT("api/borrowings/{id}/return") suspend fun returnBook(@Path("id") id: Int, @Body dto: BorrowingRecordReturnDto): BorrowingRecordGetDto
 
-    // Admin protected
+    //Categories
+    @GET("/api/categories") suspend fun getCategories(): List<CategoryGetDto>
+
+    @GET("/api/categories/{id}") suspend fun getCategoryById(@Path("id") id: Int): CategoryGetDto
+
+    //Reservations
+    @POST("/api/reservations") suspend fun createReservation(@Body dto: ReservationCreateDto): ReservationGetDto
+    @PUT("/api/reservations/{id}/cancel") suspend fun cancelReservation(@Path("id") reservationId: Int, @Query("userId") userId: Int? = null): ReservationGetDto
+    @GET("/api/reservations/user/{userId}/active") suspend fun getActiveReservationsByUser(@Path("userId") userId: Int): List<ReservationGetDto>
+
+    //Users
+    @GET("/api/users/{id}") suspend fun getUserById(@Path("id") id: Int): UserGetDto
+    @PUT("/api/users/{id}") suspend fun updateUser(@Path("id") id: Int, @Body dto: UserUpdateDto): UserGetDto
+
+    /* ----------------------------- Admin protected ------------------------------------*/
+    //Authors
+    @POST("/api/authors") suspend fun createAuthor(@Body dto: AuthorCreateDto): AuthorGetDto
+
+    @DELETE("/api/authors/{id}") suspend fun deleteAuthor(@Path("id") id: Int): Response<Unit>
+
+    //Books
+    @POST("/api/books") suspend fun createBook(@Body dto: BookCreateUpdateDto): BookGetDto
+    @PUT("/api/books/{id}") suspend fun updateBook(@Path("id") id: Int, @Body dto: BookCreateUpdateDto): BookGetDto
+    @DELETE("/api/books/{id}") suspend fun deleteBook(@Path("id") id: Int): Response<Unit>
+
+    //Borrowing Records
     @GET("api/borrowings") suspend fun getBorrowings(): List<BorrowingRecordGetDto>
+    @GET("/api/borrowings/{id}") suspend fun getBorrowingById(@Path("id") id: Int): BorrowingRecordGetDto
+    @GET("/api/borrowings/book/{bookId}/active") suspend fun getActiveBorrowingsByBook(@Path("bookId") bookId: Int): List<BorrowingRecordGetDto>
+
+    //Categories
+    @POST("/api/categories") suspend fun createCategory(@Body dto: CategoryCreateDto): CategoryGetDto
+
+    @DELETE("/api/categories/{id}") suspend fun deleteCategory(@Path("id") id: Int): Response<Unit>
+
+    //Reservations
+    @GET("/api/reservations") suspend fun getReservations(): List<ReservationGetDto>
+    @GET("/api/reservations/{id}") suspend fun getReservationById(@Path("id") id: Int): ReservationGetDto
+    @GET("/api/reservations/book/{bookId}/active") suspend fun getActiveReservationsByBook(@Path("bookId") bookId: Int): List<ReservationGetDto>
+
+    //Users
     @GET("api/users") suspend fun getUsers(): List<UserGetDto>
+    @DELETE("/api/users/{id}") suspend fun deleteUser(@Path("id") id: Int): Response<Unit>
 }
 
 object ApiClient {

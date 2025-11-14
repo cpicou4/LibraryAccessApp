@@ -1,4 +1,4 @@
-package com.example.library_backend.borrowings
+package com.example.library_backend.reservations
 
 import com.example.library_backend.books.Book
 import com.example.library_backend.users.User
@@ -11,11 +11,11 @@ import java.time.LocalDate
 
 
 @Entity
-@Table(name = "borrowing_records")
-data class BorrowingRecord(
+@Table(name = "reservations")
+data class Reservation(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "record_id")
+    @Column(name = "reservation_id")
     val id: Int = 0,
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,18 +26,21 @@ data class BorrowingRecord(
     @JoinColumn(name = "user_id", nullable = false)
     var user: User,
 
-    @Column(name = "borrow_date", nullable = false)
-    var borrowDate: LocalDate = LocalDate.now(),
+    @Column(name = "queue_position")
+    var queuePosition: Int? = null,
 
-    @Column(name = "due_date", nullable = false)
-    var dueDate: LocalDate = LocalDate.now().plusDays(14),
+    @Column(name = "reservation_date", nullable = false)
+    var reservationDate: LocalDate = LocalDate.now(),
 
-    @Column(name = "return_date", nullable = true)
-    var returnDate: LocalDate? = null,
+    @Column(name = "expiry_date", nullable = false)
+    var expiryDate: LocalDate = LocalDate.now().plusDays(14),
 
-    @field:Size(max = 20)
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    var status: String = "ACTIVE",
+    var status: ReservationStatus = ReservationStatus.PENDING,
+
+    @Column(name = "closed_flag", nullable = false)
+    var closedFlag: Boolean = false,
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

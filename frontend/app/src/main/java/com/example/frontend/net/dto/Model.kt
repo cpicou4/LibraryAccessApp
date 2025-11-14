@@ -36,15 +36,25 @@ data class LoginResponseDto(
     val accessToken: String? = null
 )
 
+//Authors
+data class AuthorGetDto(
+    val id: Int,
+    val name: String
+)
+
+data class AuthorCreateDto(
+    val name: String
+)
+
 //Books
 data class BookGetDto(
     val id: Int,
     val isbn: String?,
     val title: String,
-    val author: String,
+    val authors: List<String> = emptyList(),
     val publisher: String?,
     val publicationYear: Int?,
-    val category: String?,
+    val categories: List<String> = emptyList(),
     val totalCopies: Int,
     val availableCopies: Int,
     val description: String?,
@@ -52,10 +62,10 @@ data class BookGetDto(
 )
 data class BookCreateUpdateDto(
     val isbn: String?,
-    val author: String,
+    val authors: List<String>,
     val publisher: String?,
     val publicationYear: Int?,
-    val category: String?,
+    val categories: List<String>,
     val totalCopies: Int = 0,
     val availableCopies: Int = 0,
     val description: String?,
@@ -82,4 +92,31 @@ data class BorrowingRecordCreateDto(
 )
 data class BorrowingRecordReturnDto(
     val returnDate: String? = null
+)
+
+//Categories
+
+data class CategoryGetDto(
+    val id: Int,
+    val type: String
+)
+
+data class CategoryCreateDto(
+    val type: String
+)
+
+//Reservation
+data class ReservationCreateDto(
+    val userId: Int,
+    val bookId: Int
+)
+
+data class ReservationGetDto(
+    val id: Int,
+    val userId: Int,
+    val bookId: Int,
+    val queuePosition: Int?,
+    val reservationDate: String,
+    val expiryDate: String,
+    val status: String
 )

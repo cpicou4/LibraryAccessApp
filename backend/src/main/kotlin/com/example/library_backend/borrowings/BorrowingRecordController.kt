@@ -9,9 +9,6 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/borrowings")
 class BorrowingRecordController(private val service: BorrowingRecordService) {
 
-    @GetMapping("/ping")
-    fun ping() = "pong"
-
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     fun getAll(): List<BorrowingRecordGetDto> = service.getAll()

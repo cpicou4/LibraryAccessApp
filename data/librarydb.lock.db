@@ -1,6 +1,6 @@
 #FileLock
-#Sat Oct 18 19:01:58 CDT 2025
-hostName=DoctorFlash11
-id=199f9c5ddc72d2f7cc3362d6e9f2c84a666e35e4789
+#Thu Nov 13 07:18:48 CST 2025
+hostName=172.23.224.192
+id=19a7d5e5fb8750004cbd06777ee2bb4bdec77478f4f
 method=file
-server=192.168.7.232\:61714
+server=172.23.224.192\:53009

@@ -17,7 +17,7 @@ import java.time.Instant
     uniqueConstraints = [
         UniqueConstraint(name = "uk_books_isbn", columnNames = ["isbn"])
     ])
-data class Book(
+class Book(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "book_id")
@@ -31,10 +31,13 @@ data class Book(
     @Column(name = "title", nullable = false, length = 255)
     var title: String,
 
-    @field:NotBlank
-    @field:Size(max = 255)
-    @Column(name = "author", nullable = false, length = 255)
-    var author: String,
+    @ManyToMany
+    @JoinTable(
+        name = "book_authors",
+        joinColumns = [JoinColumn(name = "book_id")],
+        inverseJoinColumns = [JoinColumn(name = "author_id")]
+    )
+    val authors: MutableSet<Author> = mutableSetOf(),
 
     @field:Size(max = 100)
     @Column(name = "publisher", length = 100)
@@ -43,9 +46,13 @@ data class Book(
     @Column(name ="publication_year")
     var publicationYear: Int? = null,
 
-    @field:Size(max = 50)
-    @Column(name = "category", length = 50)
-    var category: String? = null,
+    @ManyToMany
+    @JoinTable(
+        name = "book_categories",
+        joinColumns = [JoinColumn(name = "book_id")],
+        inverseJoinColumns = [JoinColumn(name = "category_id")]
+    )
+    val categories: MutableSet<Category> = mutableSetOf(),
 
     @field:Min(0)
     @Column(name = "total_copies", nullable = false)
@@ -69,7 +76,7 @@ data class Book(
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    val updatedAt: Instant? = null
+    var updatedAt: Instant? = null
 
 ) {
     @PrePersist

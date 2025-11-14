@@ -27,3 +27,4 @@ app:
 logging:
   level:
     org.hibernate.SQL: debug
+    org.springframework.security: DEBUG
