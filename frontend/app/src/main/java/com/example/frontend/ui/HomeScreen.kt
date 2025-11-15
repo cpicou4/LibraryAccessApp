@@ -175,7 +175,34 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
             }
 
             // Book List
-            items(books) { book -> BookCard(book = book) }
+            items(books) { book ->
+                BookCard(
+                        book = book,
+                        onReserve = { bookId ->
+                            scope.launch {
+                                val uid = TokenStore.userId
+                                if (uid == null) {
+                                    output = "Please login first."
+                                    return@launch
+                                }
+                                try {
+                                    val dto = ReservationCreateDto(userId = uid, bookId = bookId)
+                                    val reservation =
+                                            withContext(Dispatchers.IO) {
+                                                ApiClient.api.createReservation(dto)
+                                            }
+                                    output =
+                                            "✓ Reservation created!\n\n" +
+                                                    "Reservation #${reservation.id}\n" +
+                                                    "Queue Position: ${reservation.queuePosition ?: "Next"}\n" +
+                                                    "Valid until: ${reservation.expiryDate}"
+                                } catch (e: Exception) {
+                                    output = "Reservation failed: ${e.message}"
+                                }
+                            }
+                        }
+                )
+            }
 
             // My Borrowings Section
             item {
@@ -218,6 +245,55 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
                     Icon(Icons.Default.List, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("View My Active Borrowings")
+                }
+            }
+
+            // My Reservations Section
+            item {
+                Spacer(Modifier.height(8.dp))
+                SectionHeader(title = "My Reservations", icon = Icons.Default.DateRange)
+            }
+
+            item {
+                OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                if (currentUserId == null) {
+                                    output = "Please login first."
+                                    return@launch
+                                }
+                                try {
+                                    val list =
+                                            withContext(Dispatchers.IO) {
+                                                ApiClient.api.getActiveReservationsByUser(
+                                                        currentUserId
+                                                )
+                                            }
+                                    output =
+                                            if (list.isEmpty()) {
+                                                "You have no active reservations."
+                                            } else {
+                                                "Active Reservations (${list.size}):\n\n" +
+                                                        list.joinToString("\n") { r ->
+                                                            val book =
+                                                                    books.find { it.id == r.bookId }
+                                                            "• ${book?.title ?: "Book #${r.bookId}"}\n" +
+                                                                    "  Reservation #${r.id}\n" +
+                                                                    "  Queue Position: ${r.queuePosition ?: "Next"}\n" +
+                                                                    "  Valid: ${r.reservationDate} to ${r.expiryDate}\n" +
+                                                                    "  Status: ${r.status}\n"
+                                                        }
+                                            }
+                                } catch (e: Exception) {
+                                    output = "Error: ${e.message}"
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.DateRange, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("View My Active Reservations")
                 }
             }
 
@@ -755,7 +831,7 @@ fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vector.Image
 }
 
 @Composable
-fun BookCard(book: BookGetDto) {
+fun BookCard(book: BookGetDto, onReserve: (Int) -> Unit = {}) {
     Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
@@ -868,6 +944,23 @@ fun BookCard(book: BookGetDto) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
+                }
+            }
+
+            // Reserve button for unavailable books
+            if (book.availableCopies == 0) {
+                Spacer(Modifier.height(12.dp))
+                Button(
+                        onClick = { onReserve(book.id) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors =
+                                ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiary
+                                )
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Reserve This Book")
                 }
             }
         }
