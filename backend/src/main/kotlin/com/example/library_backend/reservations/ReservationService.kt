@@ -24,7 +24,7 @@ class ReservationService(
     private fun today() = LocalDate.now()
 
     private fun map(r: Reservation) = ReservationGetDto(
-        r.id!!, r.user.id!!, r.book.id!!, r.queuePosition, r.reservationDate, r.expiryDate, r.status
+        r.id!!, r.book.id!!, r.user.id!!, r.queuePosition, r.reservationDate, r.expiryDate, r.status
     )
 
     @Transactional(readOnly = true)
